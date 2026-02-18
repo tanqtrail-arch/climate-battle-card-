@@ -351,6 +351,8 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
   const[bStep,setBStep]=useState(0);
   const[pDeck,setPDeck]=useState([]); // player draw pile
   const[cDeck,setCDeck]=useState([]); // cpu draw pile
+  const[history,setHistory]=useState([]); // battle history for result screen
+  const[reviewCard,setReviewCard]=useState(null); // card review popup
   const pend=useRef(null);
   const stepTimer=useRef(null);
 
@@ -410,9 +412,11 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
           // Step 4: judge
           const pV=card[st.key],cV=cpu[st.key];
           const pw=hi?pV>cV:pV<cV;
-          if(pV===cV)setMsg("🤝 引き分け！");
-          else if(pw){setPS(s=>s+1);setStreak(s=>s+1);setMsg("🎉 キミの勝ち！");}
-          else{setCS(s=>s+1);setStreak(0);setMsg("😈 相手の勝ち...");}
+          let roundResult;
+          if(pV===cV){setMsg("🤝 引き分け！");roundResult="draw";}
+          else if(pw){setPS(s=>s+1);setStreak(s=>s+1);setMsg("🎉 キミの勝ち！");roundResult="win";}
+          else{setCS(s=>s+1);setStreak(0);setMsg("😈 相手の勝ち...");roundResult="lose";}
+          setHistory(h=>[...h,{rd:rd,pCard:card,cCard:cpu,stat:st,hi:hi,pVal:pV,cVal:cV,result:roundResult}]);
           const ns=[card.name,cpu.name];
           if(isW){
             if(st.key==="maxTemp"&&ns.includes("サウジアラビア"))setTip("🤯 リヤドは50℃超え！世界一暑い首都！");
@@ -441,16 +445,138 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
 
   if(ph==="end"){
     const won=pS>=4;
+    const allCards=[...new Map(history.flatMap(h=>[h.pCard,h.cCard]).map(c=>[c.id,c])).values()];
+
+    // Card review popup
+    if(reviewCard){
+      const rc=reviewCard;
+      return(
+        <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0f0c29,#1a1a3e)",fontFamily:"'Zen Maru Gothic',sans-serif",color:"#fff",display:"flex",flexDirection:"column",alignItems:"center",padding:"20px 10px"}}>
+          <style>{`@import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap');`}</style>
+          <div style={{width:"100%",maxWidth:400}}>
+            <button onClick={()=>setReviewCard(null)} style={{background:"rgba(255,255,255,0.1)",border:"none",color:"#fff",padding:"8px 16px",borderRadius:10,cursor:"pointer",fontSize:13,fontWeight:700,marginBottom:16}}>← もどる</button>
+            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
+              <span style={{fontSize:40}}>{rc.emoji}</span>
+              <div>
+                <div style={{fontSize:22,fontWeight:900}}>{rc.name}</div>
+                <div style={{fontSize:12,opacity:0.6}}>{isW?"首都:":"県庁:"} {rc.capital}</div>
+                {rc.zone&&<div style={{fontSize:10,opacity:0.5,marginTop:2}}>🌍 {rc.zone}</div>}
+              </div>
+            </div>
+            <div style={{background:"rgba(255,255,255,0.06)",borderRadius:16,padding:"12px 16px",marginBottom:14}}>
+              <div style={{fontSize:11,fontWeight:700,opacity:0.5,marginBottom:8}}>ステータス一覧</div>
+              {STATS.map(s=>{
+                const v=rc[s.key];
+                const ic=s.key==="green"||s.key==="snow";
+                return(
+                  <div key={s.key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 10px",borderRadius:10,background:s.color+"12",marginBottom:4}}>
+                    <span style={{fontSize:13,display:"flex",alignItems:"center",gap:6}}>
+                      <span style={{fontSize:18}}>{s.emoji}</span>
+                      <span style={{fontWeight:700}}>{s.label}</span>
+                    </span>
+                    <span style={{fontSize:16,fontWeight:900,color:s.color}}>
+                      {ic?[0,1,2,3,4].map(i=><span key={i} style={{opacity:i<v?1:0.2}}>{i<v?(s.key==="green"?"🌿":"⛄"):"·"}</span>)
+                        :<span>{v}{s.unit}</span>}
+                    </span>
+                  </div>);
+              })}
+            </div>
+            {rc.trivia&&<div style={{background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.2)",borderRadius:12,padding:"10px 14px",fontSize:12,fontWeight:700,color:"#FFD700"}}>💡 {rc.trivia}</div>}
+            {/* Show battle results involving this card */}
+            {history.filter(h=>h.pCard.id===rc.id||h.cCard.id===rc.id).length>0&&(
+              <div style={{marginTop:14}}>
+                <div style={{fontSize:11,fontWeight:700,opacity:0.5,marginBottom:6}}>このカードの対戦</div>
+                {history.filter(h=>h.pCard.id===rc.id||h.cCard.id===rc.id).map((h,i)=>{
+                  const isPlayer=h.pCard.id===rc.id;
+                  const opponent=isPlayer?h.cCard:h.pCard;
+                  const myVal=isPlayer?h.pVal:h.cVal;
+                  const opVal=isPlayer?h.cVal:h.pVal;
+                  const myResult=isPlayer?h.result:(h.result==="win"?"lose":h.result==="lose"?"win":h.result);
+                  return(
+                    <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:10,background:"rgba(255,255,255,0.04)",marginBottom:3}}>
+                      <span style={{fontSize:10,opacity:0.4,minWidth:28}}>R{h.rd}</span>
+                      <span style={{fontSize:12}}>{h.stat.emoji}</span>
+                      <span style={{fontSize:11,fontWeight:700,flex:1}}>{myVal}{h.stat.unit} vs {opVal}{h.stat.unit}</span>
+                      <span style={{fontSize:11}}>{opponent.emoji}</span>
+                      <span style={{fontSize:12,fontWeight:900,color:myResult==="win"?"#FFD700":myResult==="lose"?"#74c0fc":"#aaa"}}>{myResult==="win"?"WIN":myResult==="lose"?"LOSE":"DRAW"}</span>
+                    </div>);
+                })}
+              </div>
+            )}
+          </div>
+        </div>);
+    }
+
     return(
-      <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:won?"linear-gradient(135deg,#FFD700,#FFA500)":"linear-gradient(135deg,#4a6fa5,#2d3a4a)",fontFamily:"'Zen Maru Gothic',sans-serif"}}>
+      <div style={{minHeight:"100vh",background:won?"linear-gradient(135deg,#1a0a2e,#2d1b69,#0f0c29)":"linear-gradient(135deg,#1a1a3e,#2d3a4a,#0f0c29)",fontFamily:"'Zen Maru Gothic',sans-serif",color:"#fff",display:"flex",flexDirection:"column",alignItems:"center",padding:"20px 10px",overflow:"auto"}}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap');`}</style>
-        <div style={{fontSize:56}}>{won?"🏆":"💪"}</div>
-        <h2 style={{color:"#fff",fontSize:24,fontWeight:900,margin:"10px 0"}}>{won?"キミの勝ち！":"残念...次こそ！"}</h2>
-        <div style={{color:"#fff",fontSize:20,fontWeight:700}}>{pS} - {cS}</div>
-        {won&&<div style={{marginTop:6}}><LvB lv={lv}/></div>}
-        {won&&<div style={{color:"#fff",fontSize:12,marginTop:4}}>→ 次は Lv.{Math.min(lv+1,7)}！</div>}
-        {streak>=2&&<div style={{color:"#fff",fontSize:12,marginTop:4}}>🔥 {streak}連勝！</div>}
-        <button onClick={onBack} style={{marginTop:18,padding:"11px 26px",fontSize:14,fontWeight:800,background:"#fff",color:"#333",border:"none",borderRadius:12,cursor:"pointer"}}>🏠 もどる</button>
+
+        {/* Result header */}
+        <div style={{textAlign:"center",marginBottom:16}}>
+          <div style={{fontSize:56}}>{won?"🏆":"💪"}</div>
+          <h2 style={{fontSize:26,fontWeight:900,margin:"6px 0",color:won?"#FFD700":"#fff"}}>{won?"キミの勝ち！":"残念...次こそ！"}</h2>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,marginBottom:6}}>
+            <span style={{fontSize:32,fontWeight:900,color:ac}}>{pS}</span>
+            <span style={{fontSize:16,opacity:0.4}}>-</span>
+            <span style={{fontSize:32,fontWeight:900,color:ac2}}>{cS}</span>
+          </div>
+          {won&&<div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><LvB lv={lv}/><span style={{fontSize:12,opacity:0.6}}>→ 次は Lv.{Math.min(lv+1,7)}！</span></div>}
+          {streak>=2&&<div style={{marginTop:6,background:"linear-gradient(135deg,#FFD700,#FFA500)",padding:"4px 14px",borderRadius:20,fontSize:13,fontWeight:800,color:"#333",display:"inline-block"}}>🔥 {streak}連勝！{streak>best&&streak>=3?" 🏅NEW RECORD!":""}</div>}
+        </div>
+
+        {/* Battle history timeline */}
+        <div style={{width:"100%",maxWidth:420,marginBottom:18}}>
+          <div style={{fontSize:13,fontWeight:800,marginBottom:8,display:"flex",alignItems:"center",gap:6}}>📋 バトル履歴</div>
+          <div style={{background:"rgba(255,255,255,0.04)",borderRadius:16,padding:"10px 12px"}}>
+            {history.map((h,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 8px",borderRadius:10,background:h.result==="win"?"rgba(255,215,0,0.08)":h.result==="lose"?"rgba(116,192,252,0.06)":"rgba(255,255,255,0.02)",marginBottom:i<history.length-1?4:0,border:"1px solid "+(h.result==="win"?"rgba(255,215,0,0.15)":h.result==="lose"?"rgba(116,192,252,0.1)":"rgba(255,255,255,0.05)")}}>
+                <span style={{fontSize:10,fontWeight:700,opacity:0.4,minWidth:24}}>R{h.rd}</span>
+                <span style={{fontSize:13}}>{h.pCard.emoji}</span>
+                <span style={{fontSize:11,fontWeight:700,minWidth:46,textAlign:"right"}}>{h.pCard.name}</span>
+                <div style={{flex:1,textAlign:"center"}}>
+                  <div style={{fontSize:9,opacity:0.5}}>{h.stat.emoji}{h.stat.label}{h.hi?" 🔺":" 🔻"}</div>
+                  <div style={{fontSize:11,fontWeight:800}}>
+                    <span style={{color:h.result==="win"?"#FFD700":h.result==="lose"?"rgba(255,255,255,0.4)":"#aaa"}}>{h.pVal}{h.stat.unit}</span>
+                    <span style={{opacity:0.3,margin:"0 4px"}}>vs</span>
+                    <span style={{color:h.result==="lose"?"#74c0fc":h.result==="win"?"rgba(255,255,255,0.4)":"#aaa"}}>{h.cVal}{h.stat.unit}</span>
+                  </div>
+                </div>
+                <span style={{fontSize:11,fontWeight:700,minWidth:46}}>{h.cCard.name}</span>
+                <span style={{fontSize:13}}>{h.cCard.emoji}</span>
+                <span style={{fontSize:11,fontWeight:900,minWidth:34,textAlign:"right",color:h.result==="win"?"#FFD700":h.result==="lose"?"#74c0fc":"#aaa"}}>{h.result==="win"?"WIN":h.result==="lose"?"LOSE":"DRAW"}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Card review section */}
+        <div style={{width:"100%",maxWidth:420,marginBottom:18}}>
+          <div style={{fontSize:13,fontWeight:800,marginBottom:8,display:"flex",alignItems:"center",gap:6}}>🃏 使用カード復習 <span style={{fontSize:10,fontWeight:500,opacity:0.4}}>タップで詳細</span></div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",justifyContent:"center"}}>
+            {allCards.map(c=>{
+              const rounds=history.filter(h=>h.pCard.id===c.id||h.cCard.id===c.id);
+              const isPlayerCard=history.some(h=>h.pCard.id===c.id);
+              return(
+                <div key={c.id} onClick={()=>setReviewCard(c)} style={{cursor:"pointer",width:90,background:"rgba(255,255,255,0.06)",borderRadius:12,padding:"8px 6px",textAlign:"center",border:"2px solid "+(isPlayerCard?ac+"44":ac2+"44"),transition:"transform 0.2s"}}
+                  onMouseEnter={e=>{e.currentTarget.style.transform="scale(1.05)";}}
+                  onMouseLeave={e=>{e.currentTarget.style.transform="scale(1)";}}
+                >
+                  <div style={{fontSize:22}}>{c.emoji}</div>
+                  <div style={{fontSize:10,fontWeight:800,marginTop:2}}>{c.name}</div>
+                  <div style={{fontSize:8,opacity:0.5,marginTop:1}}>{isPlayerCard?"キミ":"相手"}</div>
+                  <div style={{display:"flex",gap:2,justifyContent:"center",marginTop:3}}>
+                    {rounds.map((r,i)=>{
+                      const isP=r.pCard.id===c.id;
+                      const res=isP?r.result:(r.result==="win"?"lose":r.result==="lose"?"win":r.result);
+                      return <div key={i} style={{width:8,height:8,borderRadius:2,background:res==="win"?"#FFD700":res==="lose"?"#e74c3c":"#aaa"}}/>;
+                    })}
+                  </div>
+                </div>);
+            })}
+          </div>
+        </div>
+
+        <button onClick={onBack} style={{padding:"13px 32px",fontSize:15,fontWeight:800,background:won?"linear-gradient(135deg,#FFD700,#FFA500)":"linear-gradient(135deg,"+ac+","+ac+"CC)",color:won?"#333":"#fff",border:"none",borderRadius:14,cursor:"pointer",marginBottom:20}}>🏠 タイトルにもどる</button>
       </div>);
   }
 
@@ -484,7 +610,11 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
         </div>
         <div style={{textAlign:"center",minWidth:36}}><div style={{fontSize:9,opacity:0.6}}>相手</div><div style={{fontSize:20,fontWeight:900,color:ac2}}>{cS}</div></div>
       </div>
-      <div style={{fontSize:8,opacity:0.4,marginBottom:3}}>先に4勝した方が勝ち！</div>
+      <div style={{fontSize:10,fontWeight:700,marginBottom:3,display:"flex",gap:12,alignItems:"center"}}>
+        <span style={{color:ac,opacity:0.85}}>あと{Math.max(4-pS,0)}勝</span>
+        <span style={{fontSize:8,opacity:0.4}}>先に4勝した方が勝ち！</span>
+        <span style={{color:ac2,opacity:0.85}}>あと{Math.max(4-cS,0)}勝</span>
+      </div>
 
       {/* Streak */}
       {streak>=2&&<div style={{marginBottom:3,background:streak>=5?"linear-gradient(135deg,#FFD700,#FFA500)":streak>=3?"linear-gradient(135deg,#ff6b6b,#e94560)":"rgba(255,255,255,0.1)",padding:"2px 10px",borderRadius:20,fontSize:10,fontWeight:800,color:streak>=3?"#fff":"#ccc"}}>🔥{streak}連勝！{streak>best&&streak>=3?" 🏅NEW!":""}</div>}
