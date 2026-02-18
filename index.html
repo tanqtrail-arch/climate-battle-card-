@@ -359,10 +359,10 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
     const half=Math.floor(all.length/2);
     const pAll=all.slice(0,half);
     const cAll=all.slice(half);
-    setPH(pAll.slice(0,6));
-    setPDeck(pAll.slice(6));
-    setCH(cAll.slice(0,6));
-    setCDeck(cAll.slice(6));
+    setPH(pAll.slice(0,5));
+    setPDeck(pAll.slice(5));
+    setCH(cAll.slice(0,5));
+    setCDeck(cAll.slice(5));
     setRd(1);
     newCh([],true);
   },[]);
@@ -380,15 +380,23 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
     // Remove played cards from hands
     const newPH=pH.filter(c=>c.id!==card.id);
     const newCH=cH.slice(1);
-    // Draw from deck if available
-    if(pDeck.length>0){
-      newPH.push(pDeck[0]);
-      setPDeck(d=>d.slice(1));
+    // Draw from deck: replenish so hand doesn't drop below 3
+    let pDrawn=0;
+    const MIN_HAND=3;
+    while(newPH.length<MIN_HAND&&pDrawn<pDeck.length){
+      newPH.push(pDeck[pDrawn]);pDrawn++;
     }
-    if(cDeck.length>0){
-      newCH.push(cDeck[0]);
-      setCDeck(d=>d.slice(1));
+    // Always draw at least 1 if deck available and haven't drawn yet
+    if(pDrawn===0&&pDeck.length>0){newPH.push(pDeck[0]);pDrawn=1;}
+    if(pDrawn>0) setPDeck(d=>d.slice(pDrawn));
+
+    let cDrawn=0;
+    while(newCH.length<MIN_HAND&&cDrawn<cDeck.length){
+      newCH.push(cDeck[cDrawn]);cDrawn++;
     }
+    if(cDrawn===0&&cDeck.length>0){newCH.push(cDeck[0]);cDrawn=1;}
+    if(cDrawn>0) setCDeck(d=>d.slice(cDrawn));
+
     setPH(newPH);
     setCH(newCH);
     setPC(card);setCC(cpu);
