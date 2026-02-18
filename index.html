@@ -9,6 +9,10 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Zen Maru Gothic', sans-serif; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+    @keyframes newCardPulse {
+      0%, 100% { box-shadow: 0 0 16px 4px rgba(0,255,170,0.5), 0 0 32px 8px rgba(0,255,170,0.2); }
+      50% { box-shadow: 0 0 24px 8px rgba(0,255,170,0.7), 0 0 48px 16px rgba(0,255,170,0.3); }
+    }
   </style>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -351,6 +355,7 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
   const[bStep,setBStep]=useState(0);
   const[pDeck,setPDeck]=useState([]); // player draw pile
   const[cDeck,setCDeck]=useState([]); // cpu draw pile
+  const[newCards,setNewCards]=useState(new Set()); // track newly drawn card IDs
   const pend=useRef(null);
   const stepTimer=useRef(null);
 
@@ -380,9 +385,12 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
     // Remove played cards from hands
     const newPH=pH.filter(c=>c.id!==card.id);
     const newCH=cH.slice(1);
-    // Draw from deck if available
+    // Draw from deck if available - new cards added to right end
+    const drawnIds=new Set();
     if(pDeck.length>0){
-      newPH.push(pDeck[0]);
+      const drawn=pDeck[0];
+      newPH.push(drawn);
+      drawnIds.add(drawn.id);
       setPDeck(d=>d.slice(1));
     }
     if(cDeck.length>0){
@@ -391,6 +399,7 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
     }
     setPH(newPH);
     setCH(newCH);
+    setNewCards(drawnIds);
     setPC(card);setCC(cpu);
     pend.current={card,cpu};
     setMsg("");setTip("");setSpin(false);
@@ -645,12 +654,15 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
               :"手札（残り"+pH.length+"枚）"}
           </div>
           <div style={{display:"flex",gap:6,padding:"2px 4px",justifyContent:"center",flexWrap:"wrap"}}>
-            {pH.map(c=>(
-              <div key={c.id} style={{cursor:ph==="pickC"?"pointer":"default",opacity:ph==="pickC"?1:0.8,transition:"transform 0.2s"}}
+            {pH.map(c=>{
+              const isNew=newCards.has(c.id);
+              return(
+              <div key={c.id} style={{cursor:ph==="pickC"?"pointer":"default",opacity:ph==="pickC"?1:0.8,transition:"transform 0.2s, box-shadow 0.3s",position:"relative",borderRadius:16,boxShadow:isNew?"0 0 16px 4px rgba(0,255,170,0.5), 0 0 32px 8px rgba(0,255,170,0.2)":"none",animation:isNew?"newCardPulse 1.5s ease-in-out infinite":""}}
                 onMouseEnter={e=>{if(ph==="pickC")e.currentTarget.style.transform="translateY(-5px)";}}
                 onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";}}>
-                <Card r={c} stats={STATS} hl={st?.key} click={ph==="pickC"?()=>play(c):undefined} ed={ed} hide={mode==="think"}/>
-              </div>))}
+                {isNew&&<div style={{position:"absolute",top:-8,right:-4,zIndex:10,background:"linear-gradient(135deg,#00ffaa,#00cc88)",color:"#003322",fontWeight:900,fontSize:9,padding:"2px 8px",borderRadius:10,boxShadow:"0 2px 8px rgba(0,255,170,0.5)",letterSpacing:1}}>✨NEW</div>}
+                <Card r={c} stats={STATS} hl={st?.key} click={ph==="pickC"?()=>{setNewCards(s=>{const ns=new Set(s);ns.delete(c.id);return ns;});play(c);}:undefined} ed={ed} hide={mode==="think"}/>
+              </div>);})}
           </div>
         </div>)}
     </div>);
