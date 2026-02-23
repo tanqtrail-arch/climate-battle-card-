@@ -6,161 +6,63 @@
   <title>気候バトルカード</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="https://trail-game-pro.onrender.com/sdk/trail-auth.css"/>
-  <script src="https://trail-game-pro.onrender.com/sdk/trail-sdk.js"></script>
-  <script src="https://trail-game-pro.onrender.com/sdk/trail-auth.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'M PLUS Rounded 1c', sans-serif; overflow-x: hidden; -webkit-tap-highlight-color: transparent; background: #0f0c29; }
-    #pinScreen {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      min-height: 100vh; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-      color: #fff; font-family: 'M PLUS Rounded 1c', sans-serif;
-    }
-    #pinScreen .pin-card {
-      background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.12);
-      border-radius: 12px; padding: 32px 28px; text-align: center; max-width: 340;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.3);
-    }
-    #pinScreen .pin-card h2 { font-size: 22px; font-weight: 900; margin-bottom: 8px; color: #1a73e8; }
-    #pinScreen .pin-card p { font-size: 13px; opacity: 0.7; margin-bottom: 18px; }
-    #pinScreen .pin-card .pin-input {
-      width: 200px; padding: 12px 16px; font-size: 24px; font-weight: 700;
-      text-align: center; letter-spacing: 8px; border: 2px solid rgba(255,255,255,0.2);
-      border-radius: 12px; background: rgba(255,255,255,0.08); color: #fff;
-      outline: none; font-family: 'M PLUS Rounded 1c', sans-serif;
-    }
-    #pinScreen .pin-card .pin-input:focus { border-color: #1a73e8; box-shadow: 0 0 12px rgba(26,115,232,0.3); }
-    #pinScreen .pin-card .pin-btn {
-      display: block; width: 200px; margin: 16px auto 0; padding: 12px;
-      font-size: 15px; font-weight: 800; border: none; border-radius: 12px;
-      background: linear-gradient(135deg, #1a73e8, #1557b0); color: #fff;
-      cursor: pointer; box-shadow: 0 4px 12px rgba(26,115,232,0.3);
-    }
-    #pinScreen .pin-card .pin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    #pinScreen .pin-card .pin-error { color: #ff6b6b; font-size: 12px; margin-top: 10px; font-weight: 700; }
-    #playerBar {
-      display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      background: linear-gradient(135deg, #1a73e8, #1557b0); padding: 6px 16px;
-      font-size: 13px; font-weight: 700; color: #fff; text-align: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
   </style>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 </head>
 <body>
-  <!-- PIN Authentication Screen -->
-  <div id="pinScreen">
-    <div class="pin-card">
-      <h2>気候バトルカード</h2>
-      <p>PINコードを入力してください</p>
-      <input type="text" class="pin-input" id="pinInput" maxlength="6" inputmode="numeric" placeholder="------"/>
-      <button class="pin-btn" id="pinBtn" onclick="submitPin()">ログイン</button>
-      <div class="pin-error" id="pinError"></div>
-    </div>
-  </div>
-
-  <!-- Player Name Bar -->
-  <div id="playerBar"></div>
-
   <!-- Game Root -->
   <div id="root"></div>
 
-  <!-- TRAIL SDK Init & PIN Auth -->
-  <script>
-  var sdk = null;
-  var gameSession = null;
-
-  (function initTrail() {
-    try {
-      sdk = new TrailSDK({ gameId: 9, tenantSlug: "trail" });
-    } catch (e) { /* SDK init failed silently */ }
-  })();
-
-  function getTokenFromURL() {
-    try {
-      var params = new URLSearchParams(window.location.search);
-      return params.get("token") || null;
-    } catch (e) { return null; }
-  }
-
-  function submitPin() {
-    var pin = document.getElementById("pinInput").value.trim();
-    if (!pin) return;
-    var btn = document.getElementById("pinBtn");
-    btn.disabled = true;
-    document.getElementById("pinError").textContent = "";
-    try {
-      sdk.validatePin(pin)
-        .then(function(res) {
-          if (res && res.valid) {
-            onAuthSuccess();
-          } else {
-            document.getElementById("pinError").textContent = "PINが正しくありません";
-            btn.disabled = false;
-          }
-        })
-        .catch(function() {
-          document.getElementById("pinError").textContent = "認証に失敗しました";
-          btn.disabled = false;
-        });
-    } catch (e) {
-      document.getElementById("pinError").textContent = "認証に失敗しました";
-      btn.disabled = false;
-    }
-  }
-
-  function onAuthSuccess() {
-    document.getElementById("pinScreen").style.display = "none";
-    try {
-      var name = sdk.getPlayerName();
-      if (name) {
-        var bar = document.getElementById("playerBar");
-        bar.textContent = name + " さん";
-        bar.style.display = "block";
-        document.getElementById("root").style.paddingTop = "32px";
-      }
-    } catch (e) { /* ignore */ }
-    startGame();
-  }
-
-  function startGame() {
-    var scriptTag = document.getElementById("gameScript");
-    if (scriptTag) {
-      try {
-        Babel.transformScriptTags();
-      } catch(e) { /* ignore */ }
-    }
-  }
-
-  (function checkAuth() {
-    var token = getTokenFromURL();
-    if (token) {
-      try {
-        sdk.validateToken(token)
-          .then(function(res) {
-            if (res && res.valid) { onAuthSuccess(); }
-          })
-          .catch(function() { /* show PIN screen */ });
-      } catch (e) { /* show PIN screen */ }
-    }
-    document.getElementById("pinInput").addEventListener("keydown", function(e) {
-      if (e.key === "Enter") submitPin();
-    });
-  })();
-  </script>
-
   <script type="text/babel" id="gameScript">
 const { useState, useEffect, useCallback, useRef } = React;
+
+// ─── TRAIL GP3 連携 ───
+const TRAIL_API = 'https://trail-game-pro-3-2.onrender.com';
+const TRAIL_PLAYER = new URLSearchParams(location.search).get('player') || null;
+
+function calcAlt(score) {
+  if (score >= 1000) return 30;
+  if (score >= 500)  return 20;
+  if (score >= 100)  return 10;
+  return 5;
+}
+
+async function sendResultToTrail(score) {
+  if (!TRAIL_PLAYER) return 0;
+  const alt = calcAlt(score);
+  try {
+    await fetch(`${TRAIL_API}/api/external/game-result`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        player: TRAIL_PLAYER,
+        game_id: 'climate-battle',
+        game_name: '気候バトルカード',
+        score: score,
+        alt: alt
+      })
+    });
+  } catch (e) {
+    console.error('ALT送信失敗:', e);
+  }
+  return alt;
+}
+
+function goHome() {
+  window.location.href = TRAIL_PLAYER
+    ? 'https://trail-game-pro-3-2.onrender.com'
+    : location.href.split('?')[0];
+}
 
 const storageAPI = {
   get: async (key) => { try { const v = localStorage.getItem(key); return v ? { value: v } : null; } catch { return null; } },
   set: async (key, value) => { try { localStorage.setItem(key, value); } catch {} }
 };
-
-
 
 /* ======= DATA (with lat/lng) ======= */
 const WORLD = [
@@ -431,26 +333,6 @@ function LvB({lv}){
   return <div style={{display:"flex",alignItems:"center",gap:4,background:c+"22",border:"2px solid "+c,borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:800,color:c}}>Lv.{lv} {n}{lv>=6&&<span style={{fontSize:8,opacity:0.7}}>混合</span>}</div>;
 }
 
-/* ======= TRAIL SDK Session Helpers ======= */
-async function trailStartSession() {
-  try {
-    if (window.sdk) {
-      window.gameSession = await window.sdk.startSession();
-    }
-  } catch (e) { /* ignore */ }
-}
-
-async function trailEndSession(score, correct, total) {
-  try {
-    if (window.sdk) {
-      var result = await window.sdk.endSession({ score: score, correct: correct, total: total });
-      if (result && typeof result.alt === "number" && result.alt > 0) {
-        try { window.sdk.showAltPopup(result.alt); } catch (e) { /* ignore */ }
-      }
-    }
-  } catch (e) { /* ignore */ }
-}
-
 /* ======= TITLE ======= */
 function Title({onStart,ed,setEd,d}){
   const isW=ed==="world";const ac="#1a73e8";const ac2=isW?"#00b4d8":"#48dbfb";
@@ -510,7 +392,6 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
   const stepTimer=useRef(null);
 
   useEffect(()=>{
-    trailStartSession();
     const all=shuffle(POOL);
     const half=Math.floor(all.length/2);
     const pAll=all.slice(0,half);
@@ -587,13 +468,15 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
   }
 
 
+  const[altEarned,setAltEarned]=useState(0);
+
   function next(){
     if(stepTimer.current) clearTimeout(stepTimer.current);
     setBStep(0);
     if(pS>=4||cS>=4){
       const won = pS>=4;
-      const totalRounds = pS + cS;
-      trailEndSession(won ? pS : 0, pS, totalRounds);
+      const score = won ? pS : 0;
+      sendResultToTrail(score).then(alt => setAltEarned(alt));
       onEnd(won,streak);
       setPh("end");
       return;
@@ -612,7 +495,11 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
         {won&&<div style={{marginTop:6}}><LvB lv={lv}/></div>}
         {won&&<div style={{color:"#fff",fontSize:12,marginTop:4}}>→ 次は Lv.{Math.min(lv+1,7)}！</div>}
         {streak>=2&&<div style={{color:"#fff",fontSize:12,marginTop:4}}>🔥 {streak}連勝！</div>}
-        <button onClick={onBack} style={{marginTop:18,padding:"11px 26px",fontSize:14,fontWeight:800,background:"#fff",color:"#333",border:"none",borderRadius:12,cursor:"pointer",boxShadow:"0 4px 12px rgba(0,0,0,0.2)"}}>🏠 もどる</button>
+        {TRAIL_PLAYER&&altEarned>0&&<div style={{color:"#fff",fontSize:14,fontWeight:800,marginTop:8,background:"rgba(255,255,255,0.2)",padding:"6px 16px",borderRadius:12}}>{"🪙 "+altEarned+" ALT を獲得！"}</div>}
+        <div style={{display:"flex",gap:10,marginTop:18}}>
+          <button onClick={onBack} style={{padding:"11px 26px",fontSize:14,fontWeight:800,background:"#fff",color:"#333",border:"none",borderRadius:12,cursor:"pointer",boxShadow:"0 4px 12px rgba(0,0,0,0.2)"}}>🔄 もう一度</button>
+          <button onClick={goHome} style={{padding:"11px 26px",fontSize:14,fontWeight:800,background:"rgba(255,255,255,0.2)",color:"#fff",border:"2px solid rgba(255,255,255,0.4)",borderRadius:12,cursor:"pointer",boxShadow:"0 4px 12px rgba(0,0,0,0.2)"}}>{"🏠 ホームに戻る"}</button>
+        </div>
       </div>);
   }
 
