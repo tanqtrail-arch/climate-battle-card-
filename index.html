@@ -3,58 +3,29 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>気候バトルカード</title>
+  <title>🌍 気候バトルカード</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap" rel="stylesheet"/>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'M PLUS Rounded 1c', sans-serif; overflow-x: hidden; -webkit-tap-highlight-color: transparent; background: #0f0c29; }
+    body { font-family: 'Zen Maru Gothic', sans-serif; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
   </style>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 </head>
 <body>
-  <!-- Game Root -->
   <div id="root"></div>
-
-  <script type="text/babel" id="gameScript">
+  <script src="trail-nav.js"></script> <!-- 🆕 TRAIL共通ナビ -->
+  <script type="text/babel">
 const { useState, useEffect, useCallback, useRef } = React;
-
-// ─── TRAIL GP3 連携 ───
-const TRAIL_API = 'https://trail-game-pro-3-2.onrender.com';
-const TRAIL_PLAYER = new URLSearchParams(location.search).get('player') || null;
-
-async function sendResultToTrail(score, alt) {
-  if (!TRAIL_PLAYER) return 0;
-  try {
-    await fetch(`${TRAIL_API}/api/external/game-result`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        player: TRAIL_PLAYER,
-        game_id: 'climate-battle',
-        game_name: '気候バトルカード',
-        score: score,
-        alt: alt
-      })
-    });
-  } catch (e) {
-    console.error('ALT送信失敗:', e);
-  }
-  return alt;
-}
-
-function goHome() {
-  window.location.href = TRAIL_PLAYER
-    ? 'https://trail-game-pro-3-2.onrender.com'
-    : location.href.split('?')[0];
-}
 
 const storageAPI = {
   get: async (key) => { try { const v = localStorage.getItem(key); return v ? { value: v } : null; } catch { return null; } },
   set: async (key, value) => { try { localStorage.setItem(key, value); } catch {} }
 };
+
+
 
 /* ======= DATA (with lat/lng) ======= */
 const WORLD = [
@@ -235,12 +206,12 @@ function ANum({stat,val,hide,spin}){
 /* ======= CARD ======= */
 function Card({r,stats,hl,win,click,hide,spin,ed}){
   if(!r||!r.name){
-    const ac=ed==="world"?"#1a73e8":"#1a73e8";
-    return <div style={{width:136,height:200,borderRadius:12,background:"linear-gradient(135deg,#1a1a2e,#0f3460)",border:"3px solid "+ac,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:4,boxShadow:"0 4px 12px rgba(0,0,0,0.2)"}}><span style={{fontSize:26}}>{ed==="world"?"🌍":"🗾"}</span><span style={{color:ac,fontWeight:800,fontSize:9,letterSpacing:2}}>CLIMATE BATTLE</span></div>;
+    const ac=ed==="world"?"#e94560":"#ff6b6b";
+    return <div style={{width:136,height:200,borderRadius:14,background:"linear-gradient(135deg,#1a1a2e,#0f3460)",border:"3px solid "+ac,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:4}}><span style={{fontSize:26}}>{ed==="world"?"🌍":"🗾"}</span><span style={{color:ac,fontWeight:800,fontSize:9,letterSpacing:2}}>CLIMATE BATTLE</span></div>;
   }
   const isW=ed==="world";const st=stats||(isW?W_ST:J_ST);
   return(
-    <div onClick={click} style={{width:136,height:200,borderRadius:12,background:"linear-gradient(160deg,"+r.color+"18,#fff 40%,#fff)",border:"3px solid "+(win?"#FFD700":r.color),boxShadow:win?"0 0 20px rgba(255,215,0,0.6)":"0 4px 12px rgba(0,0,0,0.1)",cursor:click?"pointer":"default",display:"flex",flexDirection:"column",overflow:"hidden",position:"relative"}}>
+    <div onClick={click} style={{width:136,height:200,borderRadius:14,background:"linear-gradient(160deg,"+r.color+"18,#fff 40%,#fff)",border:"3px solid "+(win?"#FFD700":r.color),boxShadow:win?"0 0 20px rgba(255,215,0,0.6)":"0 3px 10px rgba(0,0,0,0.1)",cursor:click?"pointer":"default",display:"flex",flexDirection:"column",overflow:"hidden",position:"relative"}}>
       {win&&<div style={{position:"absolute",top:-2,right:-2,background:"#FFD700",color:"#333",fontWeight:900,fontSize:9,padding:"2px 7px",borderRadius:"0 11px 0 8px",zIndex:2}}>WIN!</div>}
       <div style={{background:"linear-gradient(135deg,"+r.color+","+r.color+"CC)",padding:"5px 8px",display:"flex",alignItems:"center",gap:5}}>
         <span style={{fontSize:16}}>{r.emoji}</span>
@@ -283,7 +254,7 @@ function LocPopup({r,ed,onClose}){
 
   return(
     <div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"linear-gradient(135deg,#1a1a3e,#2d1b69)",borderRadius:12,padding:"20px 28px",maxWidth:320,color:"#fff",fontFamily:"'M PLUS Rounded 1c',sans-serif",boxShadow:"0 8px 32px rgba(0,0,0,0.5)"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"linear-gradient(135deg,#1a1a3e,#2d1b69)",borderRadius:20,padding:"20px 28px",maxWidth:320,color:"#fff",fontFamily:"'Zen Maru Gothic',sans-serif",boxShadow:"0 8px 32px rgba(0,0,0,0.5)"}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
           <span style={{fontSize:28}}>{r.emoji}</span>
           <div>
@@ -306,18 +277,18 @@ function LocPopup({r,ed,onClose}){
           </div>
         </div>
 
-        <div style={{background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.2)",borderRadius:12,padding:"8px 12px",fontSize:12,fontWeight:700,color:"#FFD700",marginBottom:14}}>
+        <div style={{background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.2)",borderRadius:10,padding:"8px 12px",fontSize:12,fontWeight:700,color:"#FFD700",marginBottom:14}}>
           💡 {hint}
         </div>
 
-        <button onClick={onClose} style={{width:"100%",padding:"10px",fontSize:14,fontWeight:800,background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:12,cursor:"pointer"}}>とじる</button>
+        <button onClick={onClose} style={{width:"100%",padding:"10px",fontSize:14,fontWeight:800,background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:10,cursor:"pointer"}}>とじる</button>
       </div>
     </div>
   );
 }
 
 function HiLo({high}){
-  return <div style={{display:"inline-flex",alignItems:"center",gap:5,padding:"4px 14px",borderRadius:30,fontWeight:900,fontSize:14,background:high?"linear-gradient(135deg,#ff6b6b,#e03131)":"linear-gradient(135deg,#74c0fc,#1c7ed6)",color:"#fff",boxShadow:"0 2px 8px rgba(0,0,0,0.2)"}}>{high?"🔺 HIGH 高い方が勝ち！":"🔻 LOW 低い方が勝ち！"}</div>;
+  return <div style={{display:"inline-flex",alignItems:"center",gap:5,padding:"4px 14px",borderRadius:30,fontWeight:900,fontSize:14,background:high?"linear-gradient(135deg,#ff6b6b,#e03131)":"linear-gradient(135deg,#74c0fc,#1c7ed6)",color:"#fff"}}>{high?"🔺 HIGH 高い方が勝ち！":"🔻 LOW 低い方が勝ち！"}</div>;
 }
 
 function LvB({lv}){
@@ -327,29 +298,30 @@ function LvB({lv}){
 
 /* ======= TITLE ======= */
 function Title({onStart,ed,setEd,d}){
-  const isW=ed==="world";const ac="#1a73e8";const ac2=isW?"#00b4d8":"#48dbfb";
+  const isW=ed==="world";const ac=isW?"#e94560":"#ff6b6b";const ac2=isW?"#00b4d8":"#48dbfb";
   const lv=isW?d.worldLv:d.japanLv;const best=isW?d.worldBest:d.japanBest;
   return(
-    <div style={{minHeight:"100vh",background:isW?"linear-gradient(135deg,#0f0c29,#302b63,#24243e)":"linear-gradient(135deg,#1a0a2e,#2d1b69,#1a1a3e)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'M PLUS Rounded 1c',sans-serif"}}>
-      <div style={{display:"flex",background:"rgba(255,255,255,0.08)",borderRadius:12,padding:4,marginBottom:18,boxShadow:"0 2px 8px rgba(0,0,0,0.2)"}}>
-        {["world","japan"].map(k=><button key={k} onClick={()=>setEd(k)} style={{padding:"9px 22px",borderRadius:10,border:"none",cursor:"pointer",background:ed===k?(k==="world"?"linear-gradient(135deg,#1a73e8,#1557b0)":"linear-gradient(135deg,#1a73e8,#1557b0)"):"transparent",color:"#fff",fontWeight:800,fontSize:14,opacity:ed===k?1:0.5}}>{k==="world"?"🌍 世界編":"🗾 日本編"}</button>)}
+    <div style={{minHeight:"100vh",background:isW?"linear-gradient(135deg,#0f0c29,#302b63,#24243e)":"linear-gradient(135deg,#1a0a2e,#2d1b69,#1a1a3e)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Zen Maru Gothic',sans-serif"}}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap');`}</style>
+      <div style={{display:"flex",background:"rgba(255,255,255,0.08)",borderRadius:14,padding:4,marginBottom:18}}>
+        {["world","japan"].map(k=><button key={k} onClick={()=>setEd(k)} style={{padding:"9px 22px",borderRadius:11,border:"none",cursor:"pointer",background:ed===k?(k==="world"?"linear-gradient(135deg,#e94560,#c23152)":"linear-gradient(135deg,#ff6b6b,#ee5a24)"):"transparent",color:"#fff",fontWeight:800,fontSize:14,opacity:ed===k?1:0.5}}>{k==="world"?"🌍 世界編":"🗾 日本編"}</button>)}
       </div>
       <div style={{fontSize:48,marginBottom:4}}>{isW?"🌍":"🗾"}</div>
       <h1 style={{fontSize:28,fontWeight:900,color:"#fff",margin:0}}>気候バトルカード</h1>
       <div style={{fontSize:16,color:ac,fontWeight:700,letterSpacing:4,marginTop:4}}>～{isW?"世界編":"都道府県編"}～</div>
       <div style={{display:"flex",gap:10,marginTop:14,alignItems:"center"}}>
         <LvB lv={lv}/>
-        <div style={{textAlign:"center",background:"rgba(255,255,255,0.06)",borderRadius:12,padding:"5px 12px",boxShadow:"0 2px 8px rgba(0,0,0,0.15)"}}><div style={{fontSize:8,color:"rgba(255,255,255,0.5)"}}>🏆最高連勝</div><div style={{fontSize:18,fontWeight:900,color:"#FFD700"}}>{best}</div></div>
-        <div style={{textAlign:"center",background:"rgba(255,255,255,0.06)",borderRadius:12,padding:"5px 12px",boxShadow:"0 2px 8px rgba(0,0,0,0.15)"}}><div style={{fontSize:8,color:"rgba(255,255,255,0.5)"}}>⭐通算勝利</div><div style={{fontSize:18,fontWeight:900,color:"#fff"}}>{d.totalWins}</div></div>
+        <div style={{textAlign:"center",background:"rgba(255,255,255,0.06)",borderRadius:10,padding:"5px 12px"}}><div style={{fontSize:8,color:"rgba(255,255,255,0.5)"}}>🏆最高連勝</div><div style={{fontSize:18,fontWeight:900,color:"#FFD700"}}>{best}</div></div>
+        <div style={{textAlign:"center",background:"rgba(255,255,255,0.06)",borderRadius:10,padding:"5px 12px"}}><div style={{fontSize:8,color:"rgba(255,255,255,0.5)"}}>⭐通算勝利</div><div style={{fontSize:18,fontWeight:900,color:"#fff"}}>{d.totalWins}</div></div>
       </div>
       <div style={{marginTop:8,fontSize:11,color:"rgba(255,255,255,0.4)",textAlign:"center"}}>{lv<=5?"最高気温・降水量はHIGH固定":"最高気温・降水量はHIGH＆LOW混合！"}　|　先に4勝で勝ち！</div>
       <div style={{display:"flex",gap:12,marginTop:18,flexWrap:"wrap",justifyContent:"center"}}>
         <div style={{textAlign:"center"}}>
-          <button onClick={()=>onStart("quick")} style={{padding:"13px 28px",fontSize:15,fontWeight:800,background:"linear-gradient(135deg,#1a73e8,#1557b0)",color:"#fff",border:"none",borderRadius:12,cursor:"pointer",boxShadow:"0 4px 12px rgba(26,115,232,0.3)"}}>🎲 クイックバトル</button>
+          <button onClick={()=>onStart("quick")} style={{padding:"13px 28px",fontSize:15,fontWeight:800,background:"linear-gradient(135deg,"+ac+","+ac+"CC)",color:"#fff",border:"none",borderRadius:14,cursor:"pointer"}}>🎲 クイックバトル</button>
           <div style={{fontSize:9,color:"rgba(255,255,255,0.4)",marginTop:4}}>数値を見て選べる</div>
         </div>
         <div style={{textAlign:"center"}}>
-          <button onClick={()=>onStart("think")} style={{padding:"13px 28px",fontSize:15,fontWeight:800,background:"linear-gradient(135deg,"+ac2+","+ac2+"CC)",color:"#fff",border:"none",borderRadius:12,cursor:"pointer",boxShadow:"0 4px 12px rgba(0,180,216,0.3)"}}>🧠 思考バトル</button>
+          <button onClick={()=>onStart("think")} style={{padding:"13px 28px",fontSize:15,fontWeight:800,background:"linear-gradient(135deg,"+ac2+","+ac2+"CC)",color:"#fff",border:"none",borderRadius:14,cursor:"pointer"}}>🧠 思考バトル</button>
           <div style={{fontSize:9,color:"rgba(255,255,255,0.4)",marginTop:4}}>数値は隠れる！知識で勝負</div>
         </div>
       </div>
@@ -359,7 +331,7 @@ function Title({onStart,ed,setEd,d}){
 /* ======= BATTLE ======= */
 function Battle({mode,ed,lv,best,onBack,onEnd}){
   const isW=ed==="world";const POOL=isW?WORLD:JAPAN;const STATS=isW?W_ST:J_ST;
-  const ac="#1a73e8";const ac2=isW?"#00b4d8":"#48dbfb";
+  const ac=isW?"#e94560":"#ff6b6b";const ac2=isW?"#00b4d8":"#48dbfb";
 
   const[ph,setPh]=useState("init");
   const[pH,setPH]=useState([]);
@@ -440,7 +412,9 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
           const pV=card[st.key],cV=cpu[st.key];
           const pw=hi?pV>cV:pV<cV;
           if(pV===cV)setMsg("🤝 引き分け！");
-          else if(pw){setPS(s=>s+1);setStreak(s=>s+1);setMsg("🎉 キミの勝ち！");}
+          else if(pw){setPS(s=>s+1);setStreak(s=>s+1);setMsg("🎉 キミの勝ち！");
+            if(typeof TrailNav!=='undefined')TrailNav.earnAlt(1,'ラウンド勝利'); // 🆕
+          }
           else{setCS(s=>s+1);setStreak(0);setMsg("😈 相手の勝ち...");}
           const ns=[card.name,cpu.name];
           if(isW){
@@ -460,20 +434,12 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
   }
 
 
-  const[altEarned,setAltEarned]=useState(0);
-
   function next(){
     if(stepTimer.current) clearTimeout(stepTimer.current);
     setBStep(0);
-    if(pS>=4||cS>=4){
-      const won = pS>=4;
-      const score = won ? pS : 0;
-      const alt = won ? 10 : 0;
-      sendResultToTrail(score, alt).then(a => setAltEarned(a));
-      onEnd(won,streak);
-      setPh("end");
-      return;
-    }
+    if(pS>=4||cS>=4){onEnd(pS>=4,streak);
+      if(typeof TrailNav!=='undefined'){if(pS>=4)TrailNav.earnAlt(3,'バトル勝利');TrailNav.flushAltWithRetry();TrailNav.showNav();} // 🆕
+      setPh("end");return;}
     setRd(r=>r+1);setSt(null);setSpin(false);
     newCh(used);
   }
@@ -481,25 +447,23 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
   if(ph==="end"){
     const won=pS>=4;
     return(
-      <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:won?"linear-gradient(135deg,#FFD700,#FFA500)":"linear-gradient(135deg,#4a6fa5,#2d3a4a)",fontFamily:"'M PLUS Rounded 1c',sans-serif"}}>
+      <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:won?"linear-gradient(135deg,#FFD700,#FFA500)":"linear-gradient(135deg,#4a6fa5,#2d3a4a)",fontFamily:"'Zen Maru Gothic',sans-serif"}}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap');`}</style>
         <div style={{fontSize:56}}>{won?"🏆":"💪"}</div>
         <h2 style={{color:"#fff",fontSize:24,fontWeight:900,margin:"10px 0"}}>{won?"キミの勝ち！":"残念...次こそ！"}</h2>
         <div style={{color:"#fff",fontSize:20,fontWeight:700}}>{pS} - {cS}</div>
         {won&&<div style={{marginTop:6}}><LvB lv={lv}/></div>}
         {won&&<div style={{color:"#fff",fontSize:12,marginTop:4}}>→ 次は Lv.{Math.min(lv+1,7)}！</div>}
         {streak>=2&&<div style={{color:"#fff",fontSize:12,marginTop:4}}>🔥 {streak}連勝！</div>}
-        {TRAIL_PLAYER&&altEarned>0&&<div style={{color:"#fff",fontSize:14,fontWeight:800,marginTop:8,background:"rgba(255,255,255,0.2)",padding:"6px 16px",borderRadius:12}}>{"🪙 "+altEarned+" ALT を獲得！"}</div>}
-        <div style={{display:"flex",gap:10,marginTop:18}}>
-          <button onClick={onBack} style={{padding:"11px 26px",fontSize:14,fontWeight:800,background:"#fff",color:"#333",border:"none",borderRadius:12,cursor:"pointer",boxShadow:"0 4px 12px rgba(0,0,0,0.2)"}}>🔄 もう一度</button>
-          <button onClick={goHome} style={{padding:"11px 26px",fontSize:14,fontWeight:800,background:"rgba(255,255,255,0.2)",color:"#fff",border:"2px solid rgba(255,255,255,0.4)",borderRadius:12,cursor:"pointer",boxShadow:"0 4px 12px rgba(0,0,0,0.2)"}}>{"🏠 ホームに戻る"}</button>
-        </div>
+        <button onClick={onBack} style={{marginTop:18,padding:"11px 26px",fontSize:14,fontWeight:800,background:"#fff",color:"#333",border:"none",borderRadius:12,cursor:"pointer"}}>🏠 もどる</button>
       </div>);
   }
 
   const cpuN=cH[0];const isRes=ph==="res";const isSpin=ph==="spin";
 
   return(
-    <div style={{minHeight:"100vh",background:isW?"linear-gradient(180deg,#0f0c29,#1a1a3e)":"linear-gradient(180deg,#1a0a2e,#1a1a3e)",fontFamily:"'M PLUS Rounded 1c',sans-serif",color:"#fff",padding:"10px 6px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+    <div style={{minHeight:"100vh",background:isW?"linear-gradient(180deg,#0f0c29,#1a1a3e)":"linear-gradient(180deg,#1a0a2e,#1a1a3e)",fontFamily:"'Zen Maru Gothic',sans-serif",color:"#fff",padding:"10px 6px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap');`}</style>
 
       {/* Location popup */}
       {locTarget&&<LocPopup r={locTarget} ed={ed} onClose={()=>setLocTarget(null)}/>}
@@ -528,12 +492,12 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
       <div style={{fontSize:8,opacity:0.4,marginBottom:3}}>先に4勝した方が勝ち！</div>
 
       {/* Streak */}
-      {streak>=2&&<div style={{marginBottom:3,background:streak>=5?"linear-gradient(135deg,#FFD700,#FFA500)":streak>=3?"linear-gradient(135deg,#1a73e8,#1557b0)":"rgba(255,255,255,0.1)",padding:"2px 10px",borderRadius:20,fontSize:10,fontWeight:800,color:streak>=3?"#fff":"#ccc"}}>🔥{streak}連勝！{streak>best&&streak>=3?" 🏅NEW!":""}</div>}
+      {streak>=2&&<div style={{marginBottom:3,background:streak>=5?"linear-gradient(135deg,#FFD700,#FFA500)":streak>=3?"linear-gradient(135deg,#ff6b6b,#e94560)":"rgba(255,255,255,0.1)",padding:"2px 10px",borderRadius:20,fontSize:10,fontWeight:800,color:streak>=3?"#fff":"#ccc"}}>🔥{streak}連勝！{streak>best&&streak>=3?" 🏅NEW!":""}</div>}
 
       {/* Challenge banner */}
       {/* Challenge banner - only before battle */}
       {st&&ph==="pickC"&&(
-        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,background:"linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))",border:"2px solid rgba(255,255,255,0.12)",borderRadius:12,padding:"10px 24px",marginBottom:6,minWidth:280,boxShadow:"0 2px 8px rgba(0,0,0,0.2)"}}>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,background:"linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))",border:"2px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"10px 24px",marginBottom:6,minWidth:280}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <span style={{fontSize:32}}>{st.emoji}</span>
             <span style={{fontSize:22,fontWeight:900,color:st.color,textShadow:"0 0 12px "+st.color+"44"}}>{st.label}</span>
@@ -550,7 +514,7 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
           {(ph==="pickC"||bStep===0)&&(
             <div style={{display:"flex",gap:8,alignItems:"flex-start",justifyContent:"center",minHeight:210}}>
               {pC? <Card r={pC} stats={STATS} hl={st?.key} ed={ed}/>
-                :<div style={{width:136,height:200,borderRadius:12,border:"2px dashed rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"rgba(255,255,255,0.3)"}}>カードを選ぼう</div>}
+                :<div style={{width:136,height:200,borderRadius:14,border:"2px dashed rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"rgba(255,255,255,0.3)"}}>カードを選ぼう</div>}
               <div style={{display:"flex",alignItems:"center",height:200,fontSize:22,fontWeight:900}}>⚡</div>
               {cpuN?<div style={{position:"relative"}}>
                 <Card r={cpuN} stats={STATS} hide={true} ed={ed}/>
@@ -566,10 +530,9 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
               width:"100%",maxWidth:400,
               background:"linear-gradient(180deg,rgba(0,0,0,0.4),rgba(0,0,0,0.2))",
               border:"2px solid rgba(255,255,255,0.08)",
-              borderRadius:12,padding:"16px 20px",
+              borderRadius:20,padding:"16px 20px",
               minHeight:180,
               display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-              boxShadow:"0 4px 16px rgba(0,0,0,0.3)",
             }}>
 
               {/* Step 1: Stat announcement */}
@@ -677,7 +640,7 @@ function Battle({mode,ed,lv,best,onBack,onEnd}){
       {tip&&<div style={{background:"rgba(255,215,0,0.15)",border:"1px solid rgba(255,215,0,0.3)",borderRadius:12,padding:"5px 12px",fontSize:11,fontWeight:700,maxWidth:360,textAlign:"center",marginBottom:4,color:"#FFD700"}}>{tip}</div>}
 
       {/* Next */}
-      {isRes&&<button onClick={next} style={{padding:"9px 22px",fontSize:14,fontWeight:800,background:"linear-gradient(135deg,#1a73e8,#1557b0)",color:"#fff",border:"none",borderRadius:12,cursor:"pointer",marginBottom:6,boxShadow:"0 4px 12px rgba(26,115,232,0.3)"}}>{pS>=4||cS>=4?"結果を見る →":"次のラウンド →"}</button>}
+      {isRes&&<button onClick={next} style={{padding:"9px 22px",fontSize:14,fontWeight:800,background:"linear-gradient(135deg,"+ac+","+ac+"CC)",color:"#fff",border:"none",borderRadius:12,cursor:"pointer",marginBottom:6}}>{pS>=4||cS>=4?"結果を見る →":"次のラウンド →"}</button>}
 
       {/* Player hand */}
       {pH.length>0&&(
@@ -714,11 +677,28 @@ function App(){
   const lv=ed==="world"?d.worldLv:d.japanLv;
   const best=ed==="world"?d.worldBest:d.japanBest;
 
-  if(scr==="title")return <Title ed={ed} setEd={setEd} d={d} onStart={m=>{setMode(m);setScr("battle");}}/>;
-  return <Battle key={ed+mode+Date.now()} mode={mode} ed={ed} lv={lv} best={best} onBack={()=>setScr("title")} onEnd={handleEnd}/>;
+  if(scr==="title")return <Title ed={ed} setEd={setEd} d={d} onStart={m=>{setMode(m);setScr("battle");if(typeof TrailNav!=='undefined')TrailNav.hideNav();}}/>;
+  return <Battle key={ed+mode+Date.now()} mode={mode} ed={ed} lv={lv} best={best} onBack={()=>{setScr("title");if(typeof TrailNav!=='undefined'){TrailNav.flushAltWithRetry();TrailNav.showNav();}}} onEnd={handleEnd}/>;
 }
 
+// 🆕 TRAIL共通ナビ用
+window.showGameHome=function(){
+  if(confirm('ゲームを中断してホームに戻りますか？')){
+    if(typeof TrailNav!=='undefined'){TrailNav.flushAltWithRetry();TrailNav.showNav();}
+    location.reload();
+  }
+};
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
   </script>
+<!-- ===== 🆕 TRAIL共通ナビ ===== -->
+<script>
+TrailNav.init({
+  gameName: '気候バトルカード',
+  gameEmoji: '🌍',
+  gameHomeId: 'root',
+  tgp32Url: 'https://trail-game-pro-3-2.onrender.com',
+  apiBase:  'https://trail-game-pro-3-2.onrender.com/api',
+});
+</script>
 </body>
 </html>
