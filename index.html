@@ -670,6 +670,7 @@ function App(){
 
   function handleEnd(won,fs){
     if(won){up(d=>{const n={...d,totalWins:d.totalWins+1};const lk=ed==="world"?"worldLv":"japanLv";const bk=ed==="world"?"worldBest":"japanBest";n[lk]=Math.min(d[lk]+1,7);if(fs>d[bk])n[bk]=fs;return n;});}
+    DarwinBridge.stageClear({score:fs||0,correct:won?1:0,total:1});
   }
 
   if(!ok)return <div style={{minHeight:"100vh",background:"#0f0c29",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:16}}>読み込み中...</div>;
@@ -682,23 +683,10 @@ function App(){
 }
 
 // 🆕 TRAIL共通ナビ用
-window.showGameHome=function(){
-  if(confirm('ゲームを中断してホームに戻りますか？')){
-    if(typeof TrailNav!=='undefined'){TrailNav.flushAltWithRetry();TrailNav.showNav();}
-    location.reload();
-  }
-};
+window.showGameHome=function(){ DarwinBridge.exit(); };
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
   </script>
 <!-- ===== 🆕 TRAIL共通ナビ ===== -->
-<script>
-TrailNav.init({
-  gameName: '気候バトルカード',
-  gameEmoji: '🌍',
-  gameHomeId: 'root',
-  tgp32Url: 'https://trail-game-pro-3-2.onrender.com',
-  apiBase:  'https://trail-game-pro-3-2.onrender.com/api',
-});
-</script>
+<script>DarwinBridge.ready();</script>
 </body>
 </html>
